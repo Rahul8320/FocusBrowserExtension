@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Options</title>
+  </head>
+  <body>
+    <h3>Extension Settings</h3>
+    <label>
+      Enable Shorts Blocker:
+      <input type="checkbox" id="enable-blocker" checked />
+    </label>
+    <script>
+      const checkbox = document.getElementById("enable-blocker");
+      checkbox.addEventListener("change", (event) => {
+        const isEnabled = event.target.checked;
+        chrome.storage.local.set({ enableBlocker: isEnabled });
+      });
+
+      // Load saved state
+      chrome.storage.local.get("enableBlocker", (data) => {
+        checkbox.checked =
+          data.enableBlocker !== undefined ? data.enableBlocker : true;
+      });
+    </script>
+  </body>
+</html>
