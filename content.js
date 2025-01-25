@@ -1,51 +1,46 @@
-// Function to remove Shorts
 const removeShorts = () => {
-  // Select all elements with the shorts lockup structure
+  let count = 0;
+  const blockedShortsToAdd = [];
+
   const shortsSelectors = [
     "ytm-shorts-lockup-view-model",
     "ytm-shorts-lockup-view-model-v2",
   ];
 
-  let count = 0;
+  // Fetch the blocked shorts from storage once
+  chrome.storage.local.get("blockedShorts", ({ blockedShorts }) => {
+    blockedShorts = blockedShorts || [];
 
-  shortsSelectors.forEach((selector) => {
-    const shortsElements = document.querySelectorAll(selector);
-    shortsElements.forEach((short) => {
-      // Extract the unique identifier (href or thumbnail src) for the Short
-      const href = short.querySelector("a")
-        ? short.querySelector("a").href
-        : null;
+    shortsSelectors.forEach((selector) => {
+      const shortsElements = document.querySelectorAll(selector);
+      shortsElements.forEach((short) => {
+        const href = short.querySelector("a")
+          ? short.querySelector("a").href
+          : null;
 
-      if (href) {
-        // Check if the Short has already been blocked using chrome.storage.local
-        chrome.storage.local.get("blockedShorts", ({ blockedShorts }) => {
-          blockedShorts = blockedShorts || [];
+        if (href && !blockedShorts.includes(href)) {
+          short.style.display = "none";
+          count++;
 
-          // Only block and count if the Short hasn't been blocked before
-          if (!blockedShorts.includes(href)) {
-            // Block the Short by hiding it
-            short.style.display = "none"; // Hide the Shorts
+          blockedShorts.push(href);
+          blockedShortsToAdd.push(href);
 
-            // Add the blocked Short's href to the list and update storage
-            blockedShorts.push(href);
-
-            // Increment the local count
-            count++;
-
-            // Save the updated blocked Shorts list back to chrome.storage.local
-            chrome.storage.local.set({ blockedShorts });
-          }
-        });
-      }
+          short.remove();
+        }
+      });
     });
+
+    // If there are any new blocked Shorts, update the storage with the new list
+    if (blockedShortsToAdd.length > 0) {
+      chrome.storage.local.set({ blockedShorts });
+
+      // Update the blocked count in storage
+      chrome.storage.local.get("blockedCount", ({ blockedCount }) => {
+        blockedCount = blockedCount || 0;
+        chrome.storage.local.set({ blockedCount: blockedCount + count });
+      });
+    }
   });
-
-  if (count > 0) {
-    chrome.storage.local.get("blockedCount", ({ blockedCount }) => {
-      blockedCount = blockedCount || 0;
-      chrome.storage.local.set({ blockedCount: blockedCount + count });
-    });
-  }
 };
 
 // Check if the blocker is enabled in storage
